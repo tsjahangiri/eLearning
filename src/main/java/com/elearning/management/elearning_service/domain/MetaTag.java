@@ -26,7 +26,7 @@ public class MetaTag {
     @Column(nullable = false, updatable = false, unique = true)
     private UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 100)
     private String name;
 
     @ManyToMany(mappedBy = "metaTags")
