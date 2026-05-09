@@ -63,6 +63,9 @@ dependencies {
     implementation('org.springframework.boot:spring-boot-starter-data-jpa')
     runtimeOnly('org.postgresql:postgresql')
 
+    //Security
+    implementation('org.springframework.boot:spring-boot-starter-security')
+
     // Mapping
     implementation('org.mapstruct:mapstruct:1.6.3')
 
