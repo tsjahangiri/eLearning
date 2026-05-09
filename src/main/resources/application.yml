@@ -9,5 +9,5 @@ spring:
     open-in-view: false
 
 springdoc:
-  paths-to-match: /api/**
+  paths-to-match: /lms/**
 
