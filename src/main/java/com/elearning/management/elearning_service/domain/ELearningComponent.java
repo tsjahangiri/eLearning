@@ -41,10 +41,11 @@ public class ELearningComponent {
     private String imageUrl;
 
     @Column
-    private String duration;
+    private Integer durationInMinutes;
 
+    @Enumerated(EnumType.STRING)
     @Column
-    private String category;
+    private ComponentCategory category;
 
     @Column
     private LocalDate availableStartDate;
