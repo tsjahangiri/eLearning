@@ -15,7 +15,13 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Table(name = "elearning_components")
+@Table(
+        name = "elearning_components",
+        indexes = {
+                @Index(name = "idx_component_type", columnList = "type"),
+                @Index(name = "idx_component_category", columnList = "category")
+        }
+)
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
@@ -27,7 +33,7 @@ public class ELearningComponent {
     @Column(nullable = false, updatable = false, unique = true)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String name;
 
     @Column(columnDefinition = "TEXT")
@@ -37,7 +43,7 @@ public class ELearningComponent {
     @Column(nullable = false)
     private ComponentType type;
 
-    @Column(nullable = false)
+    @Column(length = 500)
     private String imageUrl;
 
     @Column
@@ -71,4 +77,8 @@ public class ELearningComponent {
     @LastModifiedDate
     @Column(nullable = false)
     private OffsetDateTime lastUpdated;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
 }

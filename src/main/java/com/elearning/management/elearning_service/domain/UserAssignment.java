@@ -18,7 +18,11 @@ import java.util.UUID;
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_user_component",
                 columnNames = {"user_id", "component_id"}
-        )
+        ),
+        indexes = {
+                @Index(name = "idx_assignment_user_id", columnList = "user_id"),
+                @Index(name = "idx_assignment_component_id", columnList = "component_id")
+        }
 )
 @EntityListeners(AuditingEntityListener.class)
 @Getter
@@ -56,4 +60,8 @@ public class UserAssignment {
     @LastModifiedDate
     @Column(nullable = false)
     private OffsetDateTime lastUpdated;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
 }
