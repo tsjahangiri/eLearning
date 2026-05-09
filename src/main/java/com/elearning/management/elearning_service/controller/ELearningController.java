@@ -1,11 +1,16 @@
 package com.elearning.management.elearning_service.controller;
 
+import com.elearning.management.elearning_service.dto.response.AssignedComponentResponse;
 import com.elearning.management.elearning_service.dto.response.ComponentDetailResponse;
 import com.elearning.management.elearning_service.service.ELearningService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping(value = "/project/restapi/lms", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/lms", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "eLearning", description = "eLearning component management API")
 public class ELearningController {
 
@@ -28,7 +33,7 @@ public class ELearningController {
         this.eLearningService = eLearningService;
     }
 
-    @GetMapping("/my-elearnings/{componentId}")
+    @GetMapping("/elearning-components/{componentId}")
     @Operation(summary = "Get detailed information for a specific eLearning component")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Component details retrieved successfully"),
@@ -41,6 +46,23 @@ public class ELearningController {
             @AuthenticationPrincipal final UserDetails userDetails) {
         return ResponseEntity.ok(
                 eLearningService.getComponentDetail(componentId, userDetails.getUsername()));
+    }
+
+    @GetMapping("/elearning-components")
+    @Operation(summary = "Get all eLearning components assigned to the authenticated user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Assigned components retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "500", description = "Unexpected server error")
+    })
+    public ResponseEntity<Page<AssignedComponentResponse>> getAllAssignedComponents(
+            @AuthenticationPrincipal final UserDetails userDetails,
+            @PageableDefault(size = 20, sort = "dateCreated", direction = Sort.Direction.DESC)
+            final Pageable pageable) {
+        return ResponseEntity.ok(
+                eLearningService.getAllAssignedComponents(
+                        userDetails.getUsername(), pageable));
     }
 }
 

@@ -2,6 +2,8 @@ package com.elearning.management.elearning_service.transform;
 
 import com.elearning.management.elearning_service.domain.ELearningComponent;
 import com.elearning.management.elearning_service.domain.UserAssignment;
+import com.elearning.management.elearning_service.dto.response.AssignedComponentResponse;
+import com.elearning.management.elearning_service.dto.response.AssignedDatesResponse;
 import com.elearning.management.elearning_service.dto.response.AvailableDatesResponse;
 import com.elearning.management.elearning_service.dto.response.ComponentDetailResponse;
 import org.mapstruct.Mapper;
@@ -27,6 +29,26 @@ public interface ELearningMapper {
     ComponentDetailResponse toComponentDetailResponse(
             ELearningComponent component,
             UserAssignment assignment);
+
+    @Mapping(target = "id", source = "assignment.component.id")
+    @Mapping(target = "name", source = "assignment.component.name")
+    @Mapping(target = "type", source = "assignment.component.type")
+    @Mapping(target = "imageUrl", source = "assignment.component.imageUrl")
+    @Mapping(target = "userStatus", source = "assignment.status")
+    @Mapping(target = "assignedDates", source = "assignment", qualifiedByName = "toAssignedDates")
+    AssignedComponentResponse toAssignedComponentResponse(UserAssignment assignment);
+
+    @Named("toAssignedDates")
+    default AssignedDatesResponse toAssignedDates(final UserAssignment assignment) {
+        if (assignment.getAssignedStartDate() == null
+                && assignment.getAssignedEndDate() == null) {
+            return null;
+        }
+        return AssignedDatesResponse.builder()
+                .startDate(assignment.getAssignedStartDate())
+                .endDate(assignment.getAssignedEndDate())
+                .build();
+    }
 
     @Named("toAvailableDates")
     default AvailableDatesResponse toAvailableDates(final ELearningComponent component) {
