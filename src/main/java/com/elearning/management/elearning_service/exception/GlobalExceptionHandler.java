@@ -8,14 +8,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ComponentNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleComponentNotFound(
-            final ComponentNotFoundException ex) {
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponse(ex.getMessage()));
-    }
-
     @ExceptionHandler(AssignmentNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleAssignmentNotFound(
             final AssignmentNotFoundException ex) {

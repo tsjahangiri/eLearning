@@ -1,7 +1,9 @@
 package com.elearning.management.elearning_service.transform;
 
 import com.elearning.management.elearning_service.domain.ELearningComponent;
+import com.elearning.management.elearning_service.domain.MetaTag;
 import com.elearning.management.elearning_service.domain.UserAssignment;
+import com.elearning.management.elearning_service.dto.projection.AssignedComponentProjection;
 import com.elearning.management.elearning_service.dto.response.AssignedComponentResponse;
 import com.elearning.management.elearning_service.dto.response.AssignedDatesResponse;
 import com.elearning.management.elearning_service.dto.response.AvailableDatesResponse;
@@ -16,6 +18,33 @@ import java.util.stream.Collectors;
 @Mapper(componentModel = "spring")
 public interface ELearningMapper {
 
+    // ─── List endpoint ─────────────────────────────────────────────────────
+
+    @Mapping(target = "id", source = "componentId")
+    @Mapping(target = "name", source = "componentName")
+    @Mapping(target = "type", source = "componentType")
+    @Mapping(target = "imageUrl", source = "componentImageUrl")
+    @Mapping(target = "userStatus", source = "assignmentStatus")
+    @Mapping(target = "assignedDates", source = "projection",
+            qualifiedByName = "projectionToAssignedDates")
+    AssignedComponentResponse toAssignedComponentResponse(
+            AssignedComponentProjection projection);
+
+    @Named("projectionToAssignedDates")
+    default AssignedDatesResponse projectionToAssignedDates(
+            final AssignedComponentProjection projection) {
+        if (projection.assignedStartDate() == null
+                && projection.assignedEndDate() == null) {
+            return null;
+        }
+        return AssignedDatesResponse.builder()
+                .startDate(projection.assignedStartDate())
+                .endDate(projection.assignedEndDate())
+                .build();
+    }
+
+    // ─── Detail endpoint ───────────────────────────────────────────────────
+
     @Mapping(target = "id", source = "component.id")
     @Mapping(target = "name", source = "component.name")
     @Mapping(target = "description", source = "component.description")
@@ -23,35 +52,19 @@ public interface ELearningMapper {
     @Mapping(target = "imageUrl", source = "component.imageUrl")
     @Mapping(target = "category", source = "component.category")
     @Mapping(target = "userStatus", source = "assignment.status")
-    @Mapping(target = "availableDates", source = "component", qualifiedByName = "toAvailableDates")
-    @Mapping(target = "metaTags", source = "component", qualifiedByName = "toMetaTagNames")
-    @Mapping(target = "duration", source = "component.durationInMinutes", qualifiedByName = "formatDuration")
+    @Mapping(target = "availableDates", source = "component",
+            qualifiedByName = "toAvailableDates")
+    @Mapping(target = "metaTags", source = "component",
+            qualifiedByName = "toMetaTagNames")
+    @Mapping(target = "duration", source = "component.durationInMinutes",
+            qualifiedByName = "formatDuration")
     ComponentDetailResponse toComponentDetailResponse(
             ELearningComponent component,
             UserAssignment assignment);
 
-    @Mapping(target = "id", source = "assignment.component.id")
-    @Mapping(target = "name", source = "assignment.component.name")
-    @Mapping(target = "type", source = "assignment.component.type")
-    @Mapping(target = "imageUrl", source = "assignment.component.imageUrl")
-    @Mapping(target = "userStatus", source = "assignment.status")
-    @Mapping(target = "assignedDates", source = "assignment", qualifiedByName = "toAssignedDates")
-    AssignedComponentResponse toAssignedComponentResponse(UserAssignment assignment);
-
-    @Named("toAssignedDates")
-    default AssignedDatesResponse toAssignedDates(final UserAssignment assignment) {
-        if (assignment.getAssignedStartDate() == null
-                && assignment.getAssignedEndDate() == null) {
-            return null;
-        }
-        return AssignedDatesResponse.builder()
-                .startDate(assignment.getAssignedStartDate())
-                .endDate(assignment.getAssignedEndDate())
-                .build();
-    }
-
     @Named("toAvailableDates")
-    default AvailableDatesResponse toAvailableDates(final ELearningComponent component) {
+    default AvailableDatesResponse toAvailableDates(
+            final ELearningComponent component) {
         if (component.getAvailableStartDate() == null
                 && component.getAvailableEndDate() == null) {
             return null;
@@ -64,12 +77,13 @@ public interface ELearningMapper {
 
     @Named("toMetaTagNames")
     default Set<String> toMetaTagNames(final ELearningComponent component) {
-        if (component.getMetaTags() == null || component.getMetaTags().isEmpty()) {
+        if (component.getMetaTags() == null
+                || component.getMetaTags().isEmpty()) {
             return Set.of();
         }
         return component.getMetaTags()
                 .stream()
-                .map(tag -> tag.getName())
+                .map(MetaTag::getName)
                 .collect(Collectors.toSet());
     }
 
@@ -77,8 +91,10 @@ public interface ELearningMapper {
     default String formatDuration(final Integer durationInMinutes) {
         if (durationInMinutes == null) return null;
         if (durationInMinutes < 60) return durationInMinutes + " minutes";
-        if (durationInMinutes % 60 == 0) return (durationInMinutes / 60) + " hours";
-        return (durationInMinutes / 60) + "h " + (durationInMinutes % 60) + "m";
+        if (durationInMinutes % 60 == 0)
+            return (durationInMinutes / 60) + " hours";
+        return (durationInMinutes / 60) + "h "
+                + (durationInMinutes % 60) + "m";
     }
 }
 

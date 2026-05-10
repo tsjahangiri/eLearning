@@ -4,6 +4,7 @@ import com.elearning.management.elearning_service.domain.AssignmentStatus;
 import com.elearning.management.elearning_service.domain.ELearningComponent;
 import com.elearning.management.elearning_service.domain.User;
 import com.elearning.management.elearning_service.domain.UserAssignment;
+import com.elearning.management.elearning_service.dto.projection.AssignedComponentProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,8 +15,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface UserAssignmentRepository extends JpaRepository<UserAssignment, UUID> {
-
-    Page<UserAssignment> findByUser(User user, Pageable pageable);
 
     Optional<UserAssignment> findByUserAndComponent(User user, ELearningComponent component);
 
@@ -41,6 +40,29 @@ public interface UserAssignmentRepository extends JpaRepository<UserAssignment, 
             WHERE ua.user = :user
             """)
     Page<UserAssignment> findByUserWithComponentAndTags(
+            @Param("user") User user,
+            Pageable pageable);
+
+    @Query(
+            value = """
+            SELECT c.id AS componentId,
+                   c.name AS componentName,
+                   c.type AS componentType,
+                   c.imageUrl AS componentImageUrl,
+                   ua.status AS assignmentStatus,
+                   ua.assignedStartDate AS assignedStartDate,
+                   ua.assignedEndDate AS assignedEndDate
+            FROM UserAssignment ua
+            JOIN ua.component c
+            WHERE ua.user = :user
+            """,
+            countQuery = """
+            SELECT COUNT(ua)
+            FROM UserAssignment ua
+            WHERE ua.user = :user
+            """
+    )
+    Page<AssignedComponentProjection> findAssignedComponentProjections(
             @Param("user") User user,
             Pageable pageable);
 }
