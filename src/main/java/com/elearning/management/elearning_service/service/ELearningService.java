@@ -7,7 +7,6 @@ import com.elearning.management.elearning_service.dto.response.AssignedComponent
 import com.elearning.management.elearning_service.dto.response.ComponentDetailResponse;
 import com.elearning.management.elearning_service.exception.AssignmentNotFoundException;
 import com.elearning.management.elearning_service.exception.ComponentNotFoundException;
-import com.elearning.management.elearning_service.exception.UserNotFoundException;
 import com.elearning.management.elearning_service.repository.ELearningComponentRepository;
 import com.elearning.management.elearning_service.repository.UserAssignmentRepository;
 import com.elearning.management.elearning_service.repository.UserRepository;
@@ -24,7 +23,6 @@ public class ELearningService {
 
     private final ELearningComponentRepository componentRepository;
     private final UserAssignmentRepository assignmentRepository;
-    private final UserRepository userRepository;
     private final ELearningMapper eLearningMapper;
 
     public ELearningService(
@@ -34,17 +32,13 @@ public class ELearningService {
             final ELearningMapper eLearningMapper) {
         this.componentRepository = componentRepository;
         this.assignmentRepository = assignmentRepository;
-        this.userRepository = userRepository;
         this.eLearningMapper = eLearningMapper;
     }
 
     @Transactional(readOnly = true)
     public ComponentDetailResponse getComponentDetail(
             final UUID componentId,
-            final String username) {
-
-        final User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException(username));
+            final User user) {
 
         final ELearningComponent component = componentRepository.findById(componentId)
                 .orElseThrow(() -> new ComponentNotFoundException(componentId));
@@ -58,11 +52,8 @@ public class ELearningService {
 
     @Transactional(readOnly = true)
     public Page<AssignedComponentResponse> getAllAssignedComponents(
-            final String username,
+            final User user,
             final Pageable pageable) {
-
-        final User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException(username));
 
         return assignmentRepository
                 .findByUserWithComponentAndTags(user, pageable)

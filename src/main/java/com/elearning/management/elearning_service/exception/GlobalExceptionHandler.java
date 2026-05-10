@@ -16,14 +16,6 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(ex.getMessage()));
     }
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUserNotFound(
-            final UserNotFoundException ex) {
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponse(ex.getMessage()));
-    }
-
     @ExceptionHandler(AssignmentNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleAssignmentNotFound(
             final AssignmentNotFoundException ex) {
