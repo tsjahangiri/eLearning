@@ -21,16 +21,12 @@ import java.util.UUID;
 @Service
 public class ELearningService {
 
-    private final ELearningComponentRepository componentRepository;
     private final UserAssignmentRepository assignmentRepository;
     private final ELearningMapper eLearningMapper;
 
     public ELearningService(
-            final ELearningComponentRepository componentRepository,
             final UserAssignmentRepository assignmentRepository,
-            final UserRepository userRepository,
             final ELearningMapper eLearningMapper) {
-        this.componentRepository = componentRepository;
         this.assignmentRepository = assignmentRepository;
         this.eLearningMapper = eLearningMapper;
     }
@@ -40,14 +36,11 @@ public class ELearningService {
             final UUID componentId,
             final User user) {
 
-        final ELearningComponent component = componentRepository.findById(componentId)
-                .orElseThrow(() -> new ComponentNotFoundException(componentId));
-
         final UserAssignment assignment = assignmentRepository
-                .findByUserAndComponent(user, component)
+                .findByUserAndComponentIdWithDetails(user, componentId)
                 .orElseThrow(() -> new AssignmentNotFoundException(componentId));
 
-        return eLearningMapper.toComponentDetailResponse(component, assignment);
+        return eLearningMapper.toComponentDetailResponse(assignment.getComponent(), assignment);
     }
 
     @Transactional(readOnly = true)

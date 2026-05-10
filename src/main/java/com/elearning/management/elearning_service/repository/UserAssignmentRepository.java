@@ -19,6 +19,17 @@ public interface UserAssignmentRepository extends JpaRepository<UserAssignment, 
 
     Optional<UserAssignment> findByUserAndComponent(User user, ELearningComponent component);
 
+    @Query("""
+        SELECT ua FROM UserAssignment ua
+        JOIN FETCH ua.component c
+        LEFT JOIN FETCH c.metaTags
+        WHERE ua.user = :user
+        AND c.id = :componentId
+        """)
+    Optional<UserAssignment> findByUserAndComponentIdWithDetails(
+            @Param("user") User user,
+            @Param("componentId") UUID componentId);
+
     Page<UserAssignment> findByUserAndStatus(User user, AssignmentStatus status, Pageable pageable);
 
     boolean existsByUserAndComponent(User user, ELearningComponent component);
