@@ -1,23 +1,27 @@
 package com.elearning.management.elearning_service;
 
 import com.elearning.management.elearning_service.domain.*;
+import com.elearning.management.elearning_service.dto.projection.AssignedComponentProjection;
 import com.elearning.management.elearning_service.dto.response.AssignedComponentResponse;
-import com.elearning.management.elearning_service.dto.response.AssignedDatesResponse;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
 
 public final class TestFactory {
 
     public static final String DEFAULT_USERNAME = "testuser";
     public static final String DEFAULT_PASSWORD = "P4ssword!";
     public static final String DEFAULT_COMPONENT_NAME = "Introduction to Scrum";
-    public static final String DEFAULT_BRAND = "Scrum Alliance";
     public static final ComponentType DEFAULT_TYPE = ComponentType.COURSE;
     public static final AssignmentStatus DEFAULT_STATUS = AssignmentStatus.BOOKED;
-    public static final ComponentCategory DEFAULT_CATEGORY = ComponentCategory.SOFTWARE_DEVELOPMENT;
+    public static final ComponentCategory DEFAULT_CATEGORY =
+            ComponentCategory.SOFTWARE_DEVELOPMENT;
 
     private TestFactory() {
     }
+
+    // ─── Domain builders ───────────────────────────────────────────────────
 
     public static User buildUser(final String encodedPassword) {
         final User user = new User();
@@ -31,7 +35,8 @@ public final class TestFactory {
     public static ELearningComponent buildComponent() {
         final ELearningComponent component = new ELearningComponent();
         component.setName(DEFAULT_COMPONENT_NAME);
-        component.setDescription("A comprehensive introduction to Scrum framework");
+        component.setDescription(
+                "A comprehensive introduction to Scrum framework");
         component.setType(DEFAULT_TYPE);
         component.setImageUrl("http://example.com/scrum.jpg");
         component.setDurationInMinutes(480);
@@ -68,10 +73,37 @@ public final class TestFactory {
         return assignment;
     }
 
+    // ─── Projection builder ────────────────────────────────────────────────
+
+    public static AssignedComponentProjection buildProjection() {
+        return new AssignedComponentProjection(
+                UUID.randomUUID(),
+                DEFAULT_COMPONENT_NAME,
+                DEFAULT_TYPE,
+                "http://example.com/scrum.jpg",
+                DEFAULT_STATUS,
+                LocalDate.of(2024, 1, 15),
+                LocalDate.of(2024, 6, 15));
+    }
+
+    public static AssignedComponentProjection buildProjection(
+            final String name,
+            final ComponentType type,
+            final AssignmentStatus status) {
+        return new AssignedComponentProjection(
+                UUID.randomUUID(),
+                name,
+                type,
+                "http://example.com/image.jpg",
+                status,
+                LocalDate.of(2024, 1, 15),
+                LocalDate.of(2024, 6, 15));
+    }
+
     // ─── Response helpers ──────────────────────────────────────────────────
 
     public static class AssignedComponentPage {
-        public java.util.List<AssignedComponentResponse> content;
+        public List<AssignedComponentResponse> content;
         public int totalElements;
         public int totalPages;
         public int size;

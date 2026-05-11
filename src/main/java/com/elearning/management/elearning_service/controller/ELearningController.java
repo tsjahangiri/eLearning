@@ -2,6 +2,7 @@ package com.elearning.management.elearning_service.controller;
 
 import com.elearning.management.elearning_service.dto.response.AssignedComponentResponse;
 import com.elearning.management.elearning_service.dto.response.ComponentDetailResponse;
+import com.elearning.management.elearning_service.security.AuthenticatedUser;
 import com.elearning.management.elearning_service.service.ELearningService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -14,7 +15,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,9 +43,9 @@ public class ELearningController {
     })
     public ResponseEntity<ComponentDetailResponse> getComponentDetail(
             @PathVariable final UUID componentId,
-            @AuthenticationPrincipal final UserDetails userDetails) {
+            @AuthenticationPrincipal final AuthenticatedUser authenticatedUser) {
         return ResponseEntity.ok(
-                eLearningService.getComponentDetail(componentId, userDetails.getUsername()));
+                eLearningService.getComponentDetail(componentId, authenticatedUser.getUser()));
     }
 
     @GetMapping("/elearning-components")
@@ -57,12 +57,12 @@ public class ELearningController {
             @ApiResponse(responseCode = "500", description = "Unexpected server error")
     })
     public ResponseEntity<Page<AssignedComponentResponse>> getAllAssignedComponents(
-            @AuthenticationPrincipal final UserDetails userDetails,
+            @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
             @PageableDefault(size = 20, sort = "dateCreated", direction = Sort.Direction.DESC)
             final Pageable pageable) {
         return ResponseEntity.ok(
                 eLearningService.getAllAssignedComponents(
-                        userDetails.getUsername(), pageable));
+                        authenticatedUser.getUser(), pageable));
     }
 }
 

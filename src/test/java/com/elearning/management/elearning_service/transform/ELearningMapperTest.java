@@ -1,7 +1,7 @@
 package com.elearning.management.elearning_service.transform;
 
-import com.elearning.management.elearning_service.TestFactory;
 import com.elearning.management.elearning_service.domain.*;
+import com.elearning.management.elearning_service.dto.projection.AssignedComponentProjection;
 import com.elearning.management.elearning_service.dto.response.AssignedComponentResponse;
 import com.elearning.management.elearning_service.dto.response.ComponentDetailResponse;
 import org.junit.jupiter.api.Test;
@@ -9,6 +9,7 @@ import org.mapstruct.factory.Mappers;
 
 import java.time.LocalDate;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.elearning.management.elearning_service.TestFactory.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,30 +22,25 @@ class ELearningMapperTest {
 
     @Test
     void toAssignedComponentResponse_mapsAllFieldsCorrectly() {
-        final User user = buildUser("encoded");
-        final ELearningComponent component = buildComponent();
-        final UserAssignment assignment = buildAssignment(user, component);
+        final AssignedComponentProjection projection = buildProjection();
 
         final AssignedComponentResponse result =
-                mapper.toAssignedComponentResponse(assignment);
+                mapper.toAssignedComponentResponse(projection);
 
-        assertThat(result.getId()).isEqualTo(component.getId());
+        assertThat(result.getId()).isEqualTo(projection.componentId());
         assertThat(result.getName()).isEqualTo(DEFAULT_COMPONENT_NAME);
         assertThat(result.getType()).isEqualTo(DEFAULT_TYPE);
         assertThat(result.getUserStatus()).isEqualTo(DEFAULT_STATUS);
-        assertThat(result.getImageUrl()).isEqualTo("http://example.com/scrum.jpg");
+        assertThat(result.getImageUrl())
+                .isEqualTo("http://example.com/scrum.jpg");
     }
 
     @Test
     void toAssignedComponentResponse_withAssignedDates_mapsCorrectly() {
-        final User user = buildUser("encoded");
-        final ELearningComponent component = buildComponent();
-        final UserAssignment assignment = buildAssignment(user, component);
-        assignment.setAssignedStartDate(LocalDate.of(2024, 1, 15));
-        assignment.setAssignedEndDate(LocalDate.of(2024, 6, 15));
+        final AssignedComponentProjection projection = buildProjection();
 
         final AssignedComponentResponse result =
-                mapper.toAssignedComponentResponse(assignment);
+                mapper.toAssignedComponentResponse(projection);
 
         assertThat(result.getAssignedDates()).isNotNull();
         assertThat(result.getAssignedDates().getStartDate())
@@ -54,17 +50,35 @@ class ELearningMapperTest {
     }
 
     @Test
-    void toAssignedComponentResponse_withNullDates_returnNullAssignedDates() {
-        final User user = buildUser("encoded");
-        final ELearningComponent component = buildComponent();
-        final UserAssignment assignment = buildAssignment(user, component);
-        assignment.setAssignedStartDate(null);
-        assignment.setAssignedEndDate(null);
+    void toAssignedComponentResponse_withNullDates_returnsNullAssignedDates() {
+        final AssignedComponentProjection projection =
+                new AssignedComponentProjection(
+                        UUID.randomUUID(),
+                        DEFAULT_COMPONENT_NAME,
+                        DEFAULT_TYPE,
+                        "http://example.com/scrum.jpg",
+                        DEFAULT_STATUS,
+                        null,
+                        null);
 
         final AssignedComponentResponse result =
-                mapper.toAssignedComponentResponse(assignment);
+                mapper.toAssignedComponentResponse(projection);
 
         assertThat(result.getAssignedDates()).isNull();
+    }
+
+    @Test
+    void toAssignedComponentResponse_differentStatuses_mappedCorrectly() {
+        final AssignedComponentProjection projection =
+                buildProjection("Agile Video", ComponentType.MEDIA,
+                        AssignmentStatus.IN_PROGRESS);
+
+        final AssignedComponentResponse result =
+                mapper.toAssignedComponentResponse(projection);
+
+        assertThat(result.getUserStatus())
+                .isEqualTo(AssignmentStatus.IN_PROGRESS);
+        assertThat(result.getType()).isEqualTo(ComponentType.MEDIA);
     }
 
     // ─── toComponentDetailResponse ─────────────────────────────────────────
@@ -155,7 +169,8 @@ class ELearningMapperTest {
         final ComponentDetailResponse result =
                 mapper.toComponentDetailResponse(component, assignment);
 
-        assertThat(result.getMetaTags()).containsExactlyInAnyOrder("Scrum", "Agile");
+        assertThat(result.getMetaTags())
+                .containsExactlyInAnyOrder("Scrum", "Agile");
     }
 
     @Test

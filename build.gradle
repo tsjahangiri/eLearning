@@ -63,7 +63,7 @@ dependencies {
     implementation('org.springframework.boot:spring-boot-starter-data-jpa')
     runtimeOnly('org.postgresql:postgresql')
 
-    //Security
+    // Security
     implementation('org.springframework.boot:spring-boot-starter-security')
 
     // Mapping
@@ -86,6 +86,10 @@ dependencies {
     annotationProcessor('org.projectlombok:lombok')
     annotationProcessor('org.mapstruct:mapstruct-processor:1.6.3')
     testAnnotationProcessor('org.projectlombok:lombok')
+
+    // Caching
+    implementation('org.springframework.boot:spring-boot-starter-cache')
+    implementation('com.github.ben-manes.caffeine:caffeine:3.1.8')
 }
 
 dependencyManagement {

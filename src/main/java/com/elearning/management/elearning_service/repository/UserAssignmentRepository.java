@@ -4,6 +4,7 @@ import com.elearning.management.elearning_service.domain.AssignmentStatus;
 import com.elearning.management.elearning_service.domain.ELearningComponent;
 import com.elearning.management.elearning_service.domain.User;
 import com.elearning.management.elearning_service.domain.UserAssignment;
+import com.elearning.management.elearning_service.dto.projection.AssignedComponentProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,22 +16,48 @@ import java.util.UUID;
 
 public interface UserAssignmentRepository extends JpaRepository<UserAssignment, UUID> {
 
-    Page<UserAssignment> findByUser(User user, Pageable pageable);
+    Optional<UserAssignment> findByUserAndComponent(
+            User user, ELearningComponent component);
 
-    Optional<UserAssignment> findByUserAndComponent(User user, ELearningComponent component);
-
-    Page<UserAssignment> findByUserAndStatus(User user, AssignmentStatus status, Pageable pageable);
+    Page<UserAssignment> findByUserAndStatus(
+            User user, AssignmentStatus status, Pageable pageable);
 
     boolean existsByUserAndComponent(User user, ELearningComponent component);
+
+    @Query(
+            value = """
+                    SELECT new com.elearning.management.elearning_service
+                    .dto.projection.AssignedComponentProjection(
+                        c.id,
+                        c.name,
+                        c.type,
+                        c.imageUrl,
+                        ua.status,
+                        ua.assignedStartDate,
+                        ua.assignedEndDate)
+                    FROM UserAssignment ua
+                    JOIN ua.component c
+                    WHERE ua.user = :user
+                    """,
+            countQuery = """
+                    SELECT COUNT(ua)
+                    FROM UserAssignment ua
+                    WHERE ua.user = :user
+                    """
+    )
+    Page<AssignedComponentProjection> findAssignedComponentProjections(
+            @Param("user") User user,
+            Pageable pageable);
 
     @Query("""
             SELECT ua FROM UserAssignment ua
             JOIN FETCH ua.component c
             LEFT JOIN FETCH c.metaTags
             WHERE ua.user = :user
+            AND c.id = :componentId
             """)
-    Page<UserAssignment> findByUserWithComponentAndTags(
+    Optional<UserAssignment> findByUserAndComponentIdWithDetails(
             @Param("user") User user,
-            Pageable pageable);
+            @Param("componentId") UUID componentId);
 }
 
