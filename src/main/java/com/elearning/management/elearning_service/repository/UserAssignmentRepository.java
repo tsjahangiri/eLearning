@@ -16,8 +16,6 @@ import java.util.UUID;
 
 public interface UserAssignmentRepository extends JpaRepository<UserAssignment, UUID> {
 
-    Page<UserAssignment> findByUser(User user, Pageable pageable);
-
     Optional<UserAssignment> findByUserAndComponent(
             User user, ELearningComponent component);
 
