@@ -33,6 +33,8 @@ public class ELearningService {
         this.eLearningMapper = eLearningMapper;
     }
 
+    // ─── Public methods ────────────────────────────────────────────────────
+
     @Transactional(readOnly = true)
     @Cacheable(
             value = CacheConfig.USER_ASSIGNMENTS_CACHE,
@@ -97,5 +99,9 @@ public class ELearningService {
         }
     }
 
+    // ─── Cache eviction ────────────────────────────────────────────────────
+    // When update/delete endpoints are implemented, add @CacheEvict methods
+    // here to evict USER_ASSIGNMENTS_CACHE and COMPONENT_DETAIL_CACHE
+    // accordingly to prevent stale data being served after mutations.
 }
 

@@ -1,8 +1,8 @@
 package com.elearning.management.elearning_service.repository;
 
-import com.elearning.management.elearning_service.TestFactory;
 import com.elearning.management.elearning_service.config.DomainConfig;
 import com.elearning.management.elearning_service.domain.*;
+import com.elearning.management.elearning_service.dto.projection.AssignedComponentProjection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +32,8 @@ class ELearningRepositoryTest {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine");
+    static PostgreSQLContainer<?> postgres =
+            new PostgreSQLContainer<>("postgres:17-alpine");
 
     @Autowired
     private UserRepository userRepository;
@@ -65,7 +66,8 @@ class ELearningRepositoryTest {
 
         assertThat(result).isPresent();
         assertThat(result.get().getUsername()).isEqualTo(DEFAULT_USERNAME);
-        assertThat(result.get().getEmail()).isEqualTo("testuser@example.com");
+        assertThat(result.get().getEmail())
+                .isEqualTo("testuser@example.com");
     }
 
     @Test
@@ -78,7 +80,8 @@ class ELearningRepositoryTest {
 
     @Test
     void existsByUsername_existingUser_returnsTrue() {
-        assertThat(userRepository.existsByUsername(DEFAULT_USERNAME)).isTrue();
+        assertThat(userRepository
+                .existsByUsername(DEFAULT_USERNAME)).isTrue();
     }
 
     @Test
@@ -114,8 +117,10 @@ class ELearningRepositoryTest {
 
     @Test
     void findByType_returnsOnlyMatchingType() {
-        componentRepository.save(buildComponent("Agile Video", ComponentType.MEDIA));
-        componentRepository.save(buildComponent("Java Basics", ComponentType.COURSE));
+        componentRepository.save(
+                buildComponent("Agile Video", ComponentType.MEDIA));
+        componentRepository.save(
+                buildComponent("Java Basics", ComponentType.COURSE));
 
         final Page<ELearningComponent> result = componentRepository
                 .findByType(ComponentType.COURSE, PageRequest.of(0, 20));
@@ -169,58 +174,39 @@ class ELearningRepositoryTest {
                 buildAssignment(savedUser, savedComponent));
 
         assertThat(assignmentRepository
-                .existsByUserAndComponent(savedUser, savedComponent)).isTrue();
+                .existsByUserAndComponent(
+                        savedUser, savedComponent)).isTrue();
     }
 
     @Test
     void existsByUserAndComponent_noAssignment_returnsFalse() {
         assertThat(assignmentRepository
-                .existsByUserAndComponent(savedUser, savedComponent)).isFalse();
+                .existsByUserAndComponent(
+                        savedUser, savedComponent)).isFalse();
     }
 
     @Test
-    void findByUserWithComponentAndTags_returnsAssignmentsWithComponents() {
+    void findAssignedComponentProjections_returnsProjections() {
         assignmentRepository.save(
                 buildAssignment(savedUser, savedComponent));
 
-        final Page<UserAssignment> result =
-                assignmentRepository.findByUserWithComponentAndTags(
+        final Page<AssignedComponentProjection> result =
+                assignmentRepository.findAssignedComponentProjections(
                         savedUser, PageRequest.of(0, 20));
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getComponent()).isNotNull();
-        assertThat(result.getContent().get(0).getComponent().getName())
+        assertThat(result.getContent().get(0).componentName())
                 .isEqualTo(DEFAULT_COMPONENT_NAME);
+        assertThat(result.getContent().get(0).componentType())
+                .isEqualTo(DEFAULT_TYPE);
+        assertThat(result.getContent().get(0).assignmentStatus())
+                .isEqualTo(DEFAULT_STATUS);
     }
 
     @Test
-    void findByUserWithComponentAndTags_onlyReturnsCurrentUserAssignments() {
-        final User otherUser = new User();
-        otherUser.setUsername("otheruser");
-        otherUser.setPassword("encoded");
-        otherUser.setEmail("other@example.com");
-        otherUser.setRole(UserRole.ROLE_USER);
-        final User savedOtherUser = userRepository.save(otherUser);
-
-        final ELearningComponent otherComponent =
-                componentRepository.save(buildComponent("Other", ComponentType.MEDIA));
-
-        assignmentRepository.save(buildAssignment(savedUser, savedComponent));
-        assignmentRepository.save(buildAssignment(savedOtherUser, otherComponent));
-
-        final Page<UserAssignment> result =
-                assignmentRepository.findByUserWithComponentAndTags(
-                        savedUser, PageRequest.of(0, 20));
-
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getUser().getUsername())
-                .isEqualTo(DEFAULT_USERNAME);
-    }
-
-    @Test
-    void findByUserWithComponentAndTags_emptyAssignments_returnsEmptyPage() {
-        final Page<UserAssignment> result =
-                assignmentRepository.findByUserWithComponentAndTags(
+    void findAssignedComponentProjections_emptyAssignments_returnsEmptyPage() {
+        final Page<AssignedComponentProjection> result =
+                assignmentRepository.findAssignedComponentProjections(
                         savedUser, PageRequest.of(0, 20));
 
         assertThat(result.getContent()).isEmpty();
@@ -228,19 +214,81 @@ class ELearningRepositoryTest {
     }
 
     @Test
-    void findByUserAndStatus_returnsOnlyMatchingStatus() {
-        final ELearningComponent component2 =
-                componentRepository.save(
-                        buildComponent("Agile Video", ComponentType.MEDIA));
+    void findAssignedComponentProjections_onlyReturnsCurrentUserData() {
+        final User otherUser = new User();
+        otherUser.setUsername("otheruser");
+        otherUser.setPassword("encoded");
+        otherUser.setEmail("other@example.com");
+        otherUser.setRole(UserRole.ROLE_USER);
+        final User savedOtherUser = userRepository.save(otherUser);
+
+        final ELearningComponent otherComponent = componentRepository
+                .save(buildComponent("Other Course", ComponentType.MEDIA));
 
         assignmentRepository.save(
-                buildAssignment(savedUser, savedComponent, AssignmentStatus.BOOKED));
+                buildAssignment(savedUser, savedComponent));
         assignmentRepository.save(
-                buildAssignment(savedUser, component2, AssignmentStatus.COMPLETED));
+                buildAssignment(savedOtherUser, otherComponent));
+
+        final Page<AssignedComponentProjection> result =
+                assignmentRepository.findAssignedComponentProjections(
+                        savedUser, PageRequest.of(0, 20));
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).componentName())
+                .isEqualTo(DEFAULT_COMPONENT_NAME);
+    }
+
+    @Test
+    void findByUserAndComponentIdWithDetails_existingAssignment_returnsWithComponent() {
+        assignmentRepository.save(
+                buildAssignment(savedUser, savedComponent));
+
+        final Optional<UserAssignment> result =
+                assignmentRepository.findByUserAndComponentIdWithDetails(
+                        savedUser, savedComponent.getId());
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getComponent()).isNotNull();
+        assertThat(result.get().getComponent().getName())
+                .isEqualTo(DEFAULT_COMPONENT_NAME);
+        assertThat(result.get().getStatus()).isEqualTo(DEFAULT_STATUS);
+    }
+
+    @Test
+    void findByUserAndComponentIdWithDetails_notAssigned_returnsEmpty() {
+        final Optional<UserAssignment> result =
+                assignmentRepository.findByUserAndComponentIdWithDetails(
+                        savedUser, savedComponent.getId());
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void findByUserAndComponentIdWithDetails_nonExistentComponent_returnsEmpty() {
+        final Optional<UserAssignment> result =
+                assignmentRepository.findByUserAndComponentIdWithDetails(
+                        savedUser, UUID.randomUUID());
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void findByUserAndStatus_returnsOnlyMatchingStatus() {
+        final ELearningComponent component2 = componentRepository
+                .save(buildComponent("Agile Video", ComponentType.MEDIA));
+
+        assignmentRepository.save(
+                buildAssignment(savedUser, savedComponent,
+                        AssignmentStatus.BOOKED));
+        assignmentRepository.save(
+                buildAssignment(savedUser, component2,
+                        AssignmentStatus.COMPLETED));
 
         final Page<UserAssignment> result =
                 assignmentRepository.findByUserAndStatus(
-                        savedUser, AssignmentStatus.BOOKED, PageRequest.of(0, 20));
+                        savedUser, AssignmentStatus.BOOKED,
+                        PageRequest.of(0, 20));
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getStatus())
