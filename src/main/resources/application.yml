@@ -27,4 +27,5 @@ server:
     min-response-size: 1024
 
 springdoc:
-  paths-to-match: /lms/**
+  paths-to-match: /api/v1/lms/**
+

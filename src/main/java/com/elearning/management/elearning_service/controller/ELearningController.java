@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping(value = "/lms", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/v1/lms", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "eLearning", description = "eLearning component management API")
 public class ELearningController {
 

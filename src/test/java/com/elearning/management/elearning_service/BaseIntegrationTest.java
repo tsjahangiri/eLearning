@@ -85,7 +85,7 @@ public abstract class BaseIntegrationTest {
     }
 
     protected String baseUrl() {
-        return "http://localhost:" + port + "/lms/elearning-components";
+        return "http://localhost:" + port + "/api/v1/lms/elearning-components";
     }
 }
 
