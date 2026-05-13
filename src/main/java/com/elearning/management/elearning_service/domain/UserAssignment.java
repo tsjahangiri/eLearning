@@ -20,8 +20,18 @@ import java.util.UUID;
                 columnNames = {"user_id", "component_id"}
         ),
         indexes = {
-                @Index(name = "idx_assignment_user_id", columnList = "user_id"),
-                @Index(name = "idx_assignment_component_id", columnList = "component_id")
+                @Index(
+                        name = "idx_assignment_user_id",
+                        columnList = "user_id"),
+                @Index(
+                        name = "idx_assignment_component_id",
+                        columnList = "component_id"),
+                @Index(
+                        name = "idx_assignment_status",
+                        columnList = "status"),
+                @Index(
+                        name = "idx_assignment_user_status",
+                        columnList = "user_id, status")
         }
 )
 @EntityListeners(AuditingEntityListener.class)
