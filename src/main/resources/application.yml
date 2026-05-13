@@ -7,6 +7,11 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     open-in-view: false
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+        default-page-size: 20
 
 springdoc:
   paths-to-match: /lms/**

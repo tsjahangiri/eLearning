@@ -4,6 +4,7 @@ import com.elearning.management.elearning_service.config.CacheConfig;
 import com.elearning.management.elearning_service.domain.User;
 import com.elearning.management.elearning_service.domain.UserAssignment;
 import com.elearning.management.elearning_service.dto.projection.AssignedComponentProjection;
+import com.elearning.management.elearning_service.dto.request.ComponentFilter;
 import com.elearning.management.elearning_service.dto.response.AssignedComponentResponse;
 import com.elearning.management.elearning_service.dto.response.CacheablePage;
 import com.elearning.management.elearning_service.dto.response.ComponentDetailResponse;
@@ -38,14 +39,17 @@ public class ELearningService {
     @Transactional(readOnly = true)
     @Cacheable(
             value = CacheConfig.USER_ASSIGNMENTS_CACHE,
-            key = "#user.id + '_' + #pageable.pageNumber + '_' + #pageable.pageSize"
+            key = "#user.id + '_' + #filter.status + '_' + #filter.type" +
+                    " + '_' + #filter.category + '_' + #pageable.pageNumber" +
+                    " + '_' + #pageable.pageSize"
     )
     public CacheablePage<AssignedComponentResponse> getAllAssignedComponents(
             final User user,
+            final ComponentFilter filter,
             final Pageable pageable) {
 
         final Page<AssignedComponentResponse> page =
-                fetchAssignedComponentProjections(user, pageable)
+                fetchAssignedComponentProjections(user, filter, pageable)
                         .map(eLearningMapper::toAssignedComponentResponse);
 
         return new CacheablePage<>(
@@ -74,10 +78,15 @@ public class ELearningService {
 
     private Page<AssignedComponentProjection> fetchAssignedComponentProjections(
             final User user,
+            final ComponentFilter filter,
             final Pageable pageable) {
         try {
-            return assignmentRepository
-                    .findAssignedComponentProjections(user, pageable);
+            return assignmentRepository.findAssignedComponentProjections(
+                    user,
+                    filter.status(),
+                    filter.type(),
+                    filter.category(),
+                    pageable);
         } catch (DataAccessException ex) {
             throw new DataPersistenceException(
                     "Failed to retrieve assigned components due to a database error");

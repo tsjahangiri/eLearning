@@ -1,9 +1,6 @@
 package com.elearning.management.elearning_service.repository;
 
-import com.elearning.management.elearning_service.domain.AssignmentStatus;
-import com.elearning.management.elearning_service.domain.ELearningComponent;
-import com.elearning.management.elearning_service.domain.User;
-import com.elearning.management.elearning_service.domain.UserAssignment;
+import com.elearning.management.elearning_service.domain.*;
 import com.elearning.management.elearning_service.dto.projection.AssignedComponentProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,27 +23,37 @@ public interface UserAssignmentRepository extends JpaRepository<UserAssignment, 
 
     @Query(
             value = """
-                    SELECT new com.elearning.management.elearning_service
-                    .dto.projection.AssignedComponentProjection(
-                        c.id,
-                        c.name,
-                        c.type,
-                        c.imageUrl,
-                        ua.status,
-                        ua.assignedStartDate,
-                        ua.assignedEndDate)
-                    FROM UserAssignment ua
-                    JOIN ua.component c
-                    WHERE ua.user = :user
-                    """,
+                SELECT new com.elearning.management.elearning_service
+                .dto.projection.AssignedComponentProjection(
+                    c.id,
+                    c.name,
+                    c.type,
+                    c.imageUrl,
+                    ua.status,
+                    ua.assignedStartDate,
+                    ua.assignedEndDate)
+                FROM UserAssignment ua
+                JOIN ua.component c
+                WHERE ua.user = :user
+                AND (ua.status = :status OR :status IS NULL)
+                AND (c.type = :type OR :type IS NULL)
+                AND (c.category = :category OR :category IS NULL)
+                """,
             countQuery = """
-                    SELECT COUNT(ua)
-                    FROM UserAssignment ua
-                    WHERE ua.user = :user
-                    """
+                SELECT COUNT(ua)
+                FROM UserAssignment ua
+                JOIN ua.component c
+                WHERE ua.user = :user
+                AND (ua.status = :status OR :status IS NULL)
+                AND (c.type = :type OR :type IS NULL)
+                AND (c.category = :category OR :category IS NULL)
+                """
     )
     Page<AssignedComponentProjection> findAssignedComponentProjections(
             @Param("user") User user,
+            @Param("status") AssignmentStatus status,
+            @Param("type") ComponentType type,
+            @Param("category") ComponentCategory category,
             Pageable pageable);
 
     @Query("""
