@@ -14,7 +14,8 @@ public class GlobalExceptionHandler {
             final AssignmentNotFoundException ex) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(new ErrorResponse(ex.getMessage()));
+                .body(new ErrorResponse(
+                        "Component not found or not accessible"));
     }
 
     @ExceptionHandler(DataPersistenceException.class)
@@ -22,7 +23,8 @@ public class GlobalExceptionHandler {
             final DataPersistenceException ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse(ex.getMessage()));
+                .body(new ErrorResponse(
+                        "A server error occurred while processing your request"));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -39,7 +41,8 @@ public class GlobalExceptionHandler {
             final Exception ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("An unexpected error occurred"));
+                .body(new ErrorResponse(
+                        "An unexpected error occurred"));
     }
 }
 
