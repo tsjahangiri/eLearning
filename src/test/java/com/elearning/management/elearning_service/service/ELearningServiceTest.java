@@ -1,9 +1,8 @@
 package com.elearning.management.elearning_service.service;
 
-import com.elearning.management.elearning_service.domain.ELearningComponent;
-import com.elearning.management.elearning_service.domain.User;
-import com.elearning.management.elearning_service.domain.UserAssignment;
+import com.elearning.management.elearning_service.domain.*;
 import com.elearning.management.elearning_service.dto.projection.AssignedComponentProjection;
+import com.elearning.management.elearning_service.dto.request.ComponentFilter;
 import com.elearning.management.elearning_service.dto.response.AssignedComponentResponse;
 import com.elearning.management.elearning_service.dto.response.CacheablePage;
 import com.elearning.management.elearning_service.dto.response.ComponentDetailResponse;
@@ -49,53 +48,145 @@ class ELearningServiceTest {
     // ─── GET ALL ASSIGNED COMPONENTS ───────────────────────────────────────
 
     @Test
-    void getAllAssignedComponents_validUser_returnsPagedResponse() {
+    void getAllAssignedComponents_noFilters_returnsPagedResponse() {
         final User user = buildUser("encodedPassword");
         final Pageable pageable = PageRequest.of(0, 20);
+        final ComponentFilter filter = new ComponentFilter(null, null, null);
         final AssignedComponentProjection projection = buildProjection();
         final Page<AssignedComponentProjection> projectionPage =
                 new PageImpl<>(List.of(projection), pageable, 1);
         final AssignedComponentResponse expectedResponse =
                 new AssignedComponentResponse();
 
-        when(assignmentRepository.findAssignedComponentProjections(user, pageable))
+        when(assignmentRepository.findAssignedComponentProjections(
+                user, null, null, null, pageable))
                 .thenReturn(projectionPage);
         when(eLearningMapper.toAssignedComponentResponse(projection))
                 .thenReturn(expectedResponse);
 
         final CacheablePage<AssignedComponentResponse> result =
-                eLearningService.getAllAssignedComponents(user, pageable);
+                eLearningService.getAllAssignedComponents(user, filter, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0)).isEqualTo(expectedResponse);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(assignmentRepository)
-                .findAssignedComponentProjections(user, pageable);
+        verify(assignmentRepository).findAssignedComponentProjections(
+                user, null, null, null, pageable);
+    }
+
+    @Test
+    void getAllAssignedComponents_withStatusFilter_passesStatusToRepository() {
+        final User user = buildUser("encodedPassword");
+        final Pageable pageable = PageRequest.of(0, 20);
+        final ComponentFilter filter =
+                new ComponentFilter(AssignmentStatus.BOOKED, null, null);
+        final Page<AssignedComponentProjection> emptyPage =
+                new PageImpl<>(List.of(), pageable, 0);
+
+        when(assignmentRepository.findAssignedComponentProjections(
+                user, AssignmentStatus.BOOKED, null, null, pageable))
+                .thenReturn(emptyPage);
+
+        eLearningService.getAllAssignedComponents(user, filter, pageable);
+
+        verify(assignmentRepository).findAssignedComponentProjections(
+                user, AssignmentStatus.BOOKED, null, null, pageable);
+    }
+
+    @Test
+    void getAllAssignedComponents_withTypeFilter_passesTypeToRepository() {
+        final User user = buildUser("encodedPassword");
+        final Pageable pageable = PageRequest.of(0, 20);
+        final ComponentFilter filter =
+                new ComponentFilter(null, ComponentType.COURSE, null);
+        final Page<AssignedComponentProjection> emptyPage =
+                new PageImpl<>(List.of(), pageable, 0);
+
+        when(assignmentRepository.findAssignedComponentProjections(
+                user, null, ComponentType.COURSE, null, pageable))
+                .thenReturn(emptyPage);
+
+        eLearningService.getAllAssignedComponents(user, filter, pageable);
+
+        verify(assignmentRepository).findAssignedComponentProjections(
+                user, null, ComponentType.COURSE, null, pageable);
+    }
+
+    @Test
+    void getAllAssignedComponents_withCategoryFilter_passesCategoryToRepository() {
+        final User user = buildUser("encodedPassword");
+        final Pageable pageable = PageRequest.of(0, 20);
+        final ComponentFilter filter = new ComponentFilter(
+                null, null, ComponentCategory.SOFTWARE_DEVELOPMENT);
+        final Page<AssignedComponentProjection> emptyPage =
+                new PageImpl<>(List.of(), pageable, 0);
+
+        when(assignmentRepository.findAssignedComponentProjections(
+                user, null, null,
+                ComponentCategory.SOFTWARE_DEVELOPMENT, pageable))
+                .thenReturn(emptyPage);
+
+        eLearningService.getAllAssignedComponents(user, filter, pageable);
+
+        verify(assignmentRepository).findAssignedComponentProjections(
+                user, null, null,
+                ComponentCategory.SOFTWARE_DEVELOPMENT, pageable);
+    }
+
+    @Test
+    void getAllAssignedComponents_withAllFilters_passesAllToRepository() {
+        final User user = buildUser("encodedPassword");
+        final Pageable pageable = PageRequest.of(0, 20);
+        final ComponentFilter filter = new ComponentFilter(
+                AssignmentStatus.BOOKED,
+                ComponentType.COURSE,
+                ComponentCategory.SOFTWARE_DEVELOPMENT);
+        final Page<AssignedComponentProjection> emptyPage =
+                new PageImpl<>(List.of(), pageable, 0);
+
+        when(assignmentRepository.findAssignedComponentProjections(
+                user,
+                AssignmentStatus.BOOKED,
+                ComponentType.COURSE,
+                ComponentCategory.SOFTWARE_DEVELOPMENT,
+                pageable))
+                .thenReturn(emptyPage);
+
+        eLearningService.getAllAssignedComponents(user, filter, pageable);
+
+        verify(assignmentRepository).findAssignedComponentProjections(
+                user,
+                AssignmentStatus.BOOKED,
+                ComponentType.COURSE,
+                ComponentCategory.SOFTWARE_DEVELOPMENT,
+                pageable);
     }
 
     @Test
     void getAllAssignedComponents_userHasNoAssignments_returnsEmptyPage() {
         final User user = buildUser("encodedPassword");
         final Pageable pageable = PageRequest.of(0, 20);
+        final ComponentFilter filter = new ComponentFilter(null, null, null);
         final Page<AssignedComponentProjection> emptyPage =
                 new PageImpl<>(List.of(), pageable, 0);
 
-        when(assignmentRepository.findAssignedComponentProjections(user, pageable))
+        when(assignmentRepository.findAssignedComponentProjections(
+                user, null, null, null, pageable))
                 .thenReturn(emptyPage);
 
         final CacheablePage<AssignedComponentResponse> result =
-                eLearningService.getAllAssignedComponents(user, pageable);
+                eLearningService.getAllAssignedComponents(user, filter, pageable);
 
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isEqualTo(0);
-        verify(eLearningMapper, never())
-                .toAssignedComponentResponse(any());
+        verify(eLearningMapper, never()).toAssignedComponentResponse(any());
     }
 
     @Test
     void getAllAssignedComponents_multipleAssignments_returnsAllMapped() {
         final User user = buildUser("encodedPassword");
         final Pageable pageable = PageRequest.of(0, 20);
+        final ComponentFilter filter = new ComponentFilter(null, null, null);
         final AssignedComponentProjection projection1 = buildProjection();
         final AssignedComponentProjection projection2 = buildProjection();
         final Page<AssignedComponentProjection> projectionPage =
@@ -103,7 +194,8 @@ class ELearningServiceTest {
         final AssignedComponentResponse response1 = new AssignedComponentResponse();
         final AssignedComponentResponse response2 = new AssignedComponentResponse();
 
-        when(assignmentRepository.findAssignedComponentProjections(user, pageable))
+        when(assignmentRepository.findAssignedComponentProjections(
+                user, null, null, null, pageable))
                 .thenReturn(projectionPage);
         when(eLearningMapper.toAssignedComponentResponse(projection1))
                 .thenReturn(response1);
@@ -111,57 +203,61 @@ class ELearningServiceTest {
                 .thenReturn(response2);
 
         final CacheablePage<AssignedComponentResponse> result =
-                eLearningService.getAllAssignedComponents(user, pageable);
+                eLearningService.getAllAssignedComponents(user, filter, pageable);
 
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getContent()).containsExactly(response1, response2);
-        verify(eLearningMapper, times(2))
-                .toAssignedComponentResponse(any());
+        verify(eLearningMapper, times(2)).toAssignedComponentResponse(any());
     }
 
     @Test
     void getAllAssignedComponents_passesCorrectPageableToRepository() {
         final User user = buildUser("encodedPassword");
         final Pageable pageable = PageRequest.of(2, 5);
+        final ComponentFilter filter = new ComponentFilter(null, null, null);
         final Page<AssignedComponentProjection> emptyPage =
                 new PageImpl<>(List.of(), pageable, 0);
 
-        when(assignmentRepository.findAssignedComponentProjections(user, pageable))
+        when(assignmentRepository.findAssignedComponentProjections(
+                user, null, null, null, pageable))
                 .thenReturn(emptyPage);
 
-        eLearningService.getAllAssignedComponents(user, pageable);
+        eLearningService.getAllAssignedComponents(user, filter, pageable);
 
-        verify(assignmentRepository)
-                .findAssignedComponentProjections(eq(user), eq(pageable));
+        verify(assignmentRepository).findAssignedComponentProjections(
+                eq(user), eq(null), eq(null), eq(null), eq(pageable));
     }
 
     @Test
     void getAllAssignedComponents_databaseError_throwsDataPersistenceException() {
         final User user = buildUser("encodedPassword");
         final Pageable pageable = PageRequest.of(0, 20);
+        final ComponentFilter filter = new ComponentFilter(null, null, null);
 
-        when(assignmentRepository.findAssignedComponentProjections(user, pageable))
+        when(assignmentRepository.findAssignedComponentProjections(
+                user, null, null, null, pageable))
                 .thenThrow(new QueryTimeoutException("query timed out"));
 
         assertThatThrownBy(() ->
-                eLearningService.getAllAssignedComponents(user, pageable))
+                eLearningService.getAllAssignedComponents(user, filter, pageable))
                 .isInstanceOf(DataPersistenceException.class)
                 .hasMessageContaining("Failed to retrieve assigned components");
 
-        verify(eLearningMapper, never())
-                .toAssignedComponentResponse(any());
+        verify(eLearningMapper, never()).toAssignedComponentResponse(any());
     }
 
     @Test
     void getAllAssignedComponents_connectionLost_throwsDataPersistenceException() {
         final User user = buildUser("encodedPassword");
         final Pageable pageable = PageRequest.of(0, 20);
+        final ComponentFilter filter = new ComponentFilter(null, null, null);
 
-        when(assignmentRepository.findAssignedComponentProjections(user, pageable))
+        when(assignmentRepository.findAssignedComponentProjections(
+                user, null, null, null, pageable))
                 .thenThrow(new DataAccessException("connection lost") {});
 
         assertThatThrownBy(() ->
-                eLearningService.getAllAssignedComponents(user, pageable))
+                eLearningService.getAllAssignedComponents(user, filter, pageable))
                 .isInstanceOf(DataPersistenceException.class)
                 .hasMessageContaining("Failed to retrieve assigned components");
     }

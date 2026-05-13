@@ -18,8 +18,12 @@ import java.util.UUID;
 @Table(
         name = "elearning_components",
         indexes = {
-                @Index(name = "idx_component_type", columnList = "type"),
-                @Index(name = "idx_component_category", columnList = "category")
+                @Index(
+                        name = "idx_component_type",
+                        columnList = "type"),
+                @Index(
+                        name = "idx_component_category",
+                        columnList = "category")
         }
 )
 @EntityListeners(AuditingEntityListener.class)
