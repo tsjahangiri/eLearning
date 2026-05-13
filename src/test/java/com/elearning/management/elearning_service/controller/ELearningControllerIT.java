@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import static com.elearning.management.elearning_service.TestFactory.buildComponent;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ELearningControllerIT extends BaseIntegrationTest {
@@ -146,6 +147,116 @@ class ELearningControllerIT extends BaseIntegrationTest {
                 .getForEntity(baseUrl(), Void.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    // ─── FILTER TESTS ──────────────────────────────────────────────────────
+
+    @Test
+    void getAllAssignedComponents_filterByStatus_returnsMatchingOnly() {
+        saveAssignment(saveComponent(), AssignmentStatus.BOOKED);
+        saveAssignment(saveComponent("Agile Video", ComponentType.MEDIA),
+                AssignmentStatus.COMPLETED);
+
+        final ResponseEntity<TestFactory.AssignedComponentPage> response =
+                authenticatedRestTemplate().getForEntity(
+                        baseUrl() + "?status=BOOKED",
+                        TestFactory.AssignedComponentPage.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().content).hasSize(1);
+        assertThat(response.getBody().content.get(0).getUserStatus())
+                .isEqualTo(AssignmentStatus.BOOKED);
+    }
+
+    @Test
+    void getAllAssignedComponents_filterByType_returnsMatchingOnly() {
+        saveAssignment(saveComponent());
+        saveAssignment(saveComponent("Agile Video", ComponentType.MEDIA));
+
+        final ResponseEntity<TestFactory.AssignedComponentPage> response =
+                authenticatedRestTemplate().getForEntity(
+                        baseUrl() + "?type=COURSE",
+                        TestFactory.AssignedComponentPage.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().content).hasSize(1);
+        assertThat(response.getBody().content.get(0).getType())
+                .isEqualTo(ComponentType.COURSE);
+    }
+
+    @Test
+    void getAllAssignedComponents_filterByCategory_returnsMatchingOnly() {
+        saveAssignment(saveComponent());
+
+        final ELearningComponent leadershipComponent =
+                buildComponent("Leadership 101", ComponentType.COURSE);
+        leadershipComponent.setCategory(ComponentCategory.LEADERSHIP);
+        final ELearningComponent saved =
+                componentRepository.save(leadershipComponent);
+        saveAssignment(saved);
+
+        final ResponseEntity<TestFactory.AssignedComponentPage> response =
+                authenticatedRestTemplate().getForEntity(
+                        baseUrl() + "?category=SOFTWARE_DEVELOPMENT",
+                        TestFactory.AssignedComponentPage.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().content).hasSize(1);
+    }
+
+    @Test
+    void getAllAssignedComponents_filterByStatusAndType_returnsMatchingOnly() {
+        saveAssignment(saveComponent(), AssignmentStatus.BOOKED);
+        saveAssignment(saveComponent("Agile Video", ComponentType.MEDIA),
+                AssignmentStatus.BOOKED);
+        saveAssignment(saveComponent("Java Basics", ComponentType.COURSE),
+                AssignmentStatus.COMPLETED);
+
+        final ResponseEntity<TestFactory.AssignedComponentPage> response =
+                authenticatedRestTemplate().getForEntity(
+                        baseUrl() + "?status=BOOKED&type=COURSE",
+                        TestFactory.AssignedComponentPage.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().content).hasSize(1);
+        assertThat(response.getBody().content.get(0).getUserStatus())
+                .isEqualTo(AssignmentStatus.BOOKED);
+        assertThat(response.getBody().content.get(0).getType())
+                .isEqualTo(ComponentType.COURSE);
+    }
+
+    @Test
+    void getAllAssignedComponents_invalidStatusFilter_returns400() {
+        final ResponseEntity<Void> response = authenticatedRestTemplate()
+                .getForEntity(
+                        baseUrl() + "?status=INVALID_STATUS",
+                        Void.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void getAllAssignedComponents_invalidTypeFilter_returns400() {
+        final ResponseEntity<Void> response = authenticatedRestTemplate()
+                .getForEntity(
+                        baseUrl() + "?type=INVALID_TYPE",
+                        Void.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void getAllAssignedComponents_filterReturnsEmpty_returns200WithEmptyPage() {
+        saveAssignment(saveComponent(), AssignmentStatus.BOOKED);
+
+        final ResponseEntity<TestFactory.AssignedComponentPage> response =
+                authenticatedRestTemplate().getForEntity(
+                        baseUrl() + "?status=COMPLETED",
+                        TestFactory.AssignedComponentPage.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().content).isEmpty();
+        assertThat(response.getBody().totalElements).isEqualTo(0);
     }
 
     // ─── GET COMPONENT DETAIL ──────────────────────────────────────────────
