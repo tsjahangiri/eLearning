@@ -3,15 +3,19 @@ package com.elearning.management.elearning_service.service;
 import com.elearning.management.elearning_service.domain.*;
 import com.elearning.management.elearning_service.dto.projection.AssignedComponentProjection;
 import com.elearning.management.elearning_service.dto.request.ComponentFilter;
+import com.elearning.management.elearning_service.dto.request.CreateComponentRequest;
 import com.elearning.management.elearning_service.dto.response.AssignedComponentResponse;
 import com.elearning.management.elearning_service.dto.response.CacheablePage;
 import com.elearning.management.elearning_service.dto.response.ComponentDetailResponse;
+import com.elearning.management.elearning_service.dto.response.CreateComponentResponse;
 import com.elearning.management.elearning_service.exception.AssignmentNotFoundException;
 import com.elearning.management.elearning_service.exception.DataPersistenceException;
+import com.elearning.management.elearning_service.repository.ELearningComponentRepository;
 import com.elearning.management.elearning_service.repository.UserAssignmentRepository;
 import com.elearning.management.elearning_service.transform.ELearningMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,6 +26,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,6 +43,9 @@ class ELearningServiceTest {
 
     @Mock
     private UserAssignmentRepository assignmentRepository;
+
+    @Mock
+    private ELearningComponentRepository componentRepository;
 
     @Mock
     private ELearningMapper eLearningMapper;
@@ -372,6 +380,111 @@ class ELearningServiceTest {
 
         verify(eLearningMapper)
                 .toComponentDetailResponse(component, assignment);
+    }
+
+    // ─── CREATE COMPONENT ──────────────────────────────────────────────────
+
+    @Test
+    void createComponent_validRequest_returnsResponseWithGeneratedId() {
+        final CreateComponentRequest request = buildCreateComponentRequest();
+        final ELearningComponent saved = buildComponent();
+        final UUID generatedId = UUID.randomUUID();
+        saved.setId(generatedId);
+        saved.setDateCreated(OffsetDateTime.now());
+
+        when(componentRepository.save(any(ELearningComponent.class)))
+                .thenReturn(saved);
+
+        final CreateComponentResponse result =
+                eLearningService.createComponent(request);
+
+        assertThat(result.id()).isEqualTo(generatedId);
+        assertThat(result.name()).isEqualTo(DEFAULT_COMPONENT_NAME);
+        assertThat(result.type()).isEqualTo(DEFAULT_TYPE);
+        assertThat(result.category()).isEqualTo(DEFAULT_CATEGORY);
+        assertThat(result.dateCreated()).isNotNull();
+    }
+
+    @Test
+    void createComponent_validRequest_savesEntityWithCorrectFields() {
+        final CreateComponentRequest request = buildCreateComponentRequest();
+        final ELearningComponent saved = buildComponent();
+        saved.setId(UUID.randomUUID());
+        saved.setDateCreated(OffsetDateTime.now());
+
+        when(componentRepository.save(any(ELearningComponent.class)))
+                .thenReturn(saved);
+
+        eLearningService.createComponent(request);
+
+        final ArgumentCaptor<ELearningComponent> captor =
+                ArgumentCaptor.forClass(ELearningComponent.class);
+        verify(componentRepository).save(captor.capture());
+        final ELearningComponent persisted = captor.getValue();
+
+        assertThat(persisted.getName()).isEqualTo(request.name());
+        assertThat(persisted.getDescription()).isEqualTo(request.description());
+        assertThat(persisted.getType()).isEqualTo(request.type());
+        assertThat(persisted.getImageUrl()).isEqualTo(request.imageUrl());
+        assertThat(persisted.getDurationInMinutes())
+                .isEqualTo(request.durationInMinutes());
+        assertThat(persisted.getCategory()).isEqualTo(request.category());
+        assertThat(persisted.getAvailableStartDate())
+                .isEqualTo(request.availableStartDate());
+        assertThat(persisted.getAvailableEndDate())
+                .isEqualTo(request.availableEndDate());
+    }
+
+    @Test
+    void createComponent_minimalRequest_savesWithNullOptionalFields() {
+        final CreateComponentRequest request = buildMinimalCreateComponentRequest();
+        final ELearningComponent saved = new ELearningComponent();
+        saved.setId(UUID.randomUUID());
+        saved.setName(DEFAULT_COMPONENT_NAME);
+        saved.setType(DEFAULT_TYPE);
+        saved.setDateCreated(OffsetDateTime.now());
+
+        when(componentRepository.save(any(ELearningComponent.class)))
+                .thenReturn(saved);
+
+        final CreateComponentResponse result =
+                eLearningService.createComponent(request);
+
+        assertThat(result.id()).isNotNull();
+        assertThat(result.name()).isEqualTo(DEFAULT_COMPONENT_NAME);
+        assertThat(result.category()).isNull();
+
+        final ArgumentCaptor<ELearningComponent> captor =
+                ArgumentCaptor.forClass(ELearningComponent.class);
+        verify(componentRepository).save(captor.capture());
+        assertThat(captor.getValue().getDescription()).isNull();
+        assertThat(captor.getValue().getImageUrl()).isNull();
+        assertThat(captor.getValue().getDurationInMinutes()).isNull();
+        assertThat(captor.getValue().getCategory()).isNull();
+    }
+
+    @Test
+    void createComponent_databaseError_throwsDataPersistenceException() {
+        final CreateComponentRequest request = buildCreateComponentRequest();
+
+        when(componentRepository.save(any(ELearningComponent.class)))
+                .thenThrow(new QueryTimeoutException("query timed out"));
+
+        assertThatThrownBy(() -> eLearningService.createComponent(request))
+                .isInstanceOf(DataPersistenceException.class)
+                .hasMessageContaining("Failed to create component");
+    }
+
+    @Test
+    void createComponent_connectionLost_throwsDataPersistenceException() {
+        final CreateComponentRequest request = buildCreateComponentRequest();
+
+        when(componentRepository.save(any(ELearningComponent.class)))
+                .thenThrow(new DataAccessException("connection lost") {});
+
+        assertThatThrownBy(() -> eLearningService.createComponent(request))
+                .isInstanceOf(DataPersistenceException.class)
+                .hasMessageContaining("Failed to create component");
     }
 }
 

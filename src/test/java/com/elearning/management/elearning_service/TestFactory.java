@@ -2,6 +2,7 @@ package com.elearning.management.elearning_service;
 
 import com.elearning.management.elearning_service.domain.*;
 import com.elearning.management.elearning_service.dto.projection.AssignedComponentProjection;
+import com.elearning.management.elearning_service.dto.request.CreateComponentRequest;
 import com.elearning.management.elearning_service.dto.response.AssignedComponentResponse;
 
 import java.time.LocalDate;
@@ -98,6 +99,32 @@ public final class TestFactory {
                 status,
                 LocalDate.of(2024, 1, 15),
                 LocalDate.of(2024, 6, 15));
+    }
+
+    // ─── Request builders ──────────────────────────────────────────────────
+
+    public static CreateComponentRequest buildCreateComponentRequest() {
+        return new CreateComponentRequest(
+                DEFAULT_COMPONENT_NAME,
+                "A comprehensive introduction to Scrum framework",
+                DEFAULT_TYPE,
+                "http://example.com/scrum.jpg",
+                480,
+                DEFAULT_CATEGORY,
+                LocalDate.of(2024, 1, 1),
+                LocalDate.of(2024, 12, 31));
+    }
+
+    public static CreateComponentRequest buildMinimalCreateComponentRequest() {
+        return new CreateComponentRequest(
+                DEFAULT_COMPONENT_NAME,
+                null,
+                DEFAULT_TYPE,
+                null,
+                null,
+                null,
+                null,
+                null);
     }
 
     // ─── Response helpers ──────────────────────────────────────────────────

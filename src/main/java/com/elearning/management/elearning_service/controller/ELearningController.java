@@ -4,9 +4,11 @@ import com.elearning.management.elearning_service.domain.AssignmentStatus;
 import com.elearning.management.elearning_service.domain.ComponentCategory;
 import com.elearning.management.elearning_service.domain.ComponentType;
 import com.elearning.management.elearning_service.dto.request.ComponentFilter;
+import com.elearning.management.elearning_service.dto.request.CreateComponentRequest;
 import com.elearning.management.elearning_service.dto.response.AssignedComponentResponse;
 import com.elearning.management.elearning_service.dto.response.CacheablePage;
 import com.elearning.management.elearning_service.dto.response.ComponentDetailResponse;
+import com.elearning.management.elearning_service.dto.response.CreateComponentResponse;
 import com.elearning.management.elearning_service.security.AuthenticatedUser;
 import com.elearning.management.elearning_service.service.ELearningService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,7 +16,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.data.domain.Page;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -22,7 +24,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.UUID;
 
 @RestController
@@ -34,6 +38,24 @@ public class ELearningController {
 
     public ELearningController(final ELearningService eLearningService) {
         this.eLearningService = eLearningService;
+    }
+
+    @PostMapping("/elearning-components")
+    @Operation(summary = "Create a new eLearning component")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Component created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request body"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized — authentication required"),
+            @ApiResponse(responseCode = "500", description = "Unexpected server error")
+    })
+    public ResponseEntity<CreateComponentResponse> createComponent(
+            @Valid @RequestBody final CreateComponentRequest request) {
+        final CreateComponentResponse response = eLearningService.createComponent(request);
+        final URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(response.id())
+                .toUri();
+        return ResponseEntity.created(location).body(response);
     }
 
     @GetMapping("/elearning-components/{componentId}")
