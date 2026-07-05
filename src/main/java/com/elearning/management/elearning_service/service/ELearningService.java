@@ -1,15 +1,19 @@
 package com.elearning.management.elearning_service.service;
 
 import com.elearning.management.elearning_service.config.CacheConfig;
+import com.elearning.management.elearning_service.domain.ELearningComponent;
 import com.elearning.management.elearning_service.domain.User;
 import com.elearning.management.elearning_service.domain.UserAssignment;
 import com.elearning.management.elearning_service.dto.projection.AssignedComponentProjection;
 import com.elearning.management.elearning_service.dto.request.ComponentFilter;
+import com.elearning.management.elearning_service.dto.request.CreateComponentRequest;
 import com.elearning.management.elearning_service.dto.response.AssignedComponentResponse;
 import com.elearning.management.elearning_service.dto.response.CacheablePage;
 import com.elearning.management.elearning_service.dto.response.ComponentDetailResponse;
+import com.elearning.management.elearning_service.dto.response.CreateComponentResponse;
 import com.elearning.management.elearning_service.exception.AssignmentNotFoundException;
 import com.elearning.management.elearning_service.exception.DataPersistenceException;
+import com.elearning.management.elearning_service.repository.ELearningComponentRepository;
 import com.elearning.management.elearning_service.repository.UserAssignmentRepository;
 import com.elearning.management.elearning_service.transform.ELearningMapper;
 import org.springframework.cache.annotation.Cacheable;
@@ -25,12 +29,15 @@ import java.util.UUID;
 public class ELearningService {
 
     private final UserAssignmentRepository assignmentRepository;
+    private final ELearningComponentRepository componentRepository;
     private final ELearningMapper eLearningMapper;
 
     public ELearningService(
             final UserAssignmentRepository assignmentRepository,
+            final ELearningComponentRepository componentRepository,
             final ELearningMapper eLearningMapper) {
         this.assignmentRepository = assignmentRepository;
+        this.componentRepository = componentRepository;
         this.eLearningMapper = eLearningMapper;
     }
 
@@ -72,6 +79,32 @@ public class ELearningService {
 
         return eLearningMapper.toComponentDetailResponse(
                 assignment.getComponent(), assignment);
+    }
+
+    @Transactional
+    public CreateComponentResponse createComponent(final CreateComponentRequest request) {
+        final ELearningComponent component = new ELearningComponent();
+        component.setName(request.name());
+        component.setDescription(request.description());
+        component.setType(request.type());
+        component.setImageUrl(request.imageUrl());
+        component.setDurationInMinutes(request.durationInMinutes());
+        component.setCategory(request.category());
+        component.setAvailableStartDate(request.availableStartDate());
+        component.setAvailableEndDate(request.availableEndDate());
+
+        try {
+            final ELearningComponent saved = componentRepository.save(component);
+            return new CreateComponentResponse(
+                    saved.getId(),
+                    saved.getName(),
+                    saved.getType(),
+                    saved.getCategory(),
+                    saved.getDateCreated());
+        } catch (DataAccessException ex) {
+            throw new DataPersistenceException(
+                    "Failed to create component due to a database error");
+        }
     }
 
     // ─── Private DB helpers ────────────────────────────────────────────────
